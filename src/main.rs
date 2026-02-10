@@ -1,25 +1,25 @@
 use clap::{Parser};
 use anyhow::Result;
 
-#[derive(Parser, Debug)]
-#[command(
-    name = "solaudit",
-    version,
-    about = "Solana program audit and retry-safety analyzer"
-)]
-struct Cli {
-    /// Program ID to analyse
-    #[arg(long)]
-    program: String,
+// #[derive(Parser, Debug)]
+// #[command(
+//     name = "solaudit",
+//     version,
+//     about = "Solana program audit and retry-safety analyzer"
+// )]
+// struct Cli {
+//     /// Program ID to analyse
+//     #[arg(long)]
+//     program: String,
 
-    /// Target cluster: devnet | mainnet
-    #[arg(long, default_value = "devnet")]
-    cluster: String,
+//     /// Target cluster: devnet | mainnet
+//     #[arg(long, default_value = "devnet")]
+//     cluster: String,
 
-    /// Output format: json | text
-    #[arg(long, default_value = "text")]
-    output: String,
-}
+//     /// Output format: json | text
+//     #[arg(long, default_value = "text")]
+//     output: String,
+// }
 
 fn main() -> Result<()> {
 
