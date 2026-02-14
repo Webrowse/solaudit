@@ -1,6 +1,6 @@
+use anyhow::{Result, anyhow};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
-use anyhow::{Result, anyhow};
 
 pub struct SolanaRpc {
     client: RpcClient,
@@ -34,7 +34,7 @@ impl SolanaRpc {
         Ok(())
     }
 
-    pub async fn get_account_lamports (&self, address: &str) -> Result<u64>{
+    pub async fn get_account_lamports(&self, address: &str) -> Result<u64> {
         let pubkey: Pubkey = address.parse()?;
         let account = self.client.get_account(&pubkey).await?;
 
