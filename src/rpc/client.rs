@@ -16,20 +16,21 @@ impl SolanaRpc {
 
         let client = RpcClient::new(url);
 
-        Ok(Self {client})
+        Ok(Self { client })
     }
 
     pub async fn get_program_accounts(&self, program: &str) -> Result<usize> {
-    //     let program_id = program.parse()?;
+        let program_id = program.parse()?;
 
-    //     let accounts = self.client.get_program_accounts(&program_id).await?;
+        let accounts = self.client.get_program_accounts(&program_id).await?;
 
-    //     Ok(accounts.len())
-    // }
+        Ok(accounts.len())
+    }
 
-    let version = self.client.get_version().await?;
-    println!("{:?}", version);
+    pub async fn health_check(&self) -> Result<()> {
+        let version = self.client.get_version().await?;
+        println!("Version of RPC: {:?}", version);
 
-    Ok(4)
+        Ok(())
     }
 }
