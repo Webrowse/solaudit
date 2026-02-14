@@ -33,5 +33,9 @@ async fn main() -> Result<()> {
 
     println!("{}", health);
 
+    let lamports = rpc.get_account_lamports(&cli.program).await?;
+
+    println!("Lamports: {:?}", lamports);
+
     Ok(())
 }
