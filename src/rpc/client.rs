@@ -1,3 +1,4 @@
+use crate::models::types::AccountSnapshot;
 use anyhow::{Result, anyhow};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -39,5 +40,20 @@ impl SolanaRpc {
         let account = self.client.get_account(&pubkey).await?;
 
         Ok(account.lamports)
+    }
+
+    pub async fn fetch_snapshot(&self, address: &str) -> Result<AccountSnapshot> {
+        let pubkey: Pubkey = address.parse()?;
+
+        let account = self.client.get_account(&pubkey).await?;
+
+        Ok(AccountSnapshot {
+            pubkey,
+            lamports: account.lamports,
+            owner: account.owner,
+            executable: account.executable,
+            data_len: account.data.len(),
+            rent_epoch: account.rent_epoch,
+        })
     }
 }

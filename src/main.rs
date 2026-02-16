@@ -8,6 +8,7 @@ mod report;
 mod rpc;
 
 use crate::cli::args::Cli;
+use crate::models::types;
 use crate::rpc::client::SolanaRpc;
 
 #[tokio::main]
@@ -36,6 +37,12 @@ async fn main() -> Result<()> {
     let lamports = rpc.get_account_lamports(&cli.program).await?;
 
     println!("Lamports: {:?}", lamports);
+
+    let snap_shot = rpc.fetch_snapshot(&cli.program).await?;
+
+    // println!("Snapshot:");
+
+    println!("Snapshot: \n{:#?}", snap_shot);
 
     Ok(())
 }
