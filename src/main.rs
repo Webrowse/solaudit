@@ -8,7 +8,8 @@ mod report;
 mod rpc;
 
 use crate::cli::args::Cli;
-use crate::models::types;
+// use crate::models::types;
+use crate::analysis::engine::SnapshotDiff;
 use crate::rpc::client::SolanaRpc;
 
 #[tokio::main]
@@ -40,9 +41,16 @@ async fn main() -> Result<()> {
 
     let snap_shot = rpc.fetch_snapshot(&cli.program).await?;
 
-    // println!("Snapshot:");
-
     println!("Snapshot: \n{:#?}", snap_shot);
+
+    let before = rpc.fetch_snapshot(&cli.program).await?;
+    // Simulation "After" manually
+    let mut after = before.clone();
+    after.lamports += 1;
+
+    let diff = SnapshotDiff::diff(&before, &after);
+
+    println!("Diff result \n{:#?}", diff);
 
     Ok(())
 }
