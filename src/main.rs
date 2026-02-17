@@ -11,6 +11,7 @@ use crate::cli::args::Cli;
 // use crate::models::types;
 use crate::analysis::engine::SnapshotDiff;
 use crate::rpc::client::SolanaRpc;
+use analysis::engine::{Classify, Classification, RetrySafety};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -50,7 +51,11 @@ async fn main() -> Result<()> {
 
     let diff = SnapshotDiff::diff(&before, &after);
 
-    println!("Diff result \n{:#?}", diff);
+    // println!("Diff result \n{:#?}", diff);
+    let result = Classify(&diff);
+
+    println!("Classification");
+    println!("{:#?}", result);
 
     Ok(())
 }
