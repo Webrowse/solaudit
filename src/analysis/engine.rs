@@ -25,7 +25,7 @@ pub enum RetrySafety {
     Unsafe,
 }
 
-pub fn Classify(diff: &SnapshotDiff) -> Classification {
+pub fn classify(diff: &SnapshotDiff) -> Classification {
     let mut reasons = Vec::new();
     if diff.lamports_changed {
         reasons.push("Lamports changed".into());
@@ -53,4 +53,18 @@ pub fn Classify(diff: &SnapshotDiff) -> Classification {
 pub struct Classification {
     pub safety: RetrySafety,
     pub reasons: Vec<String>,
+}
+
+pub struct AnalysisResult {
+    pub before: AccountSnapshot,
+    pub after: AccountSnapshot,
+    pub diff: SnapshotDiff,
+    pub classification: Classification,
+}
+
+pub fn analyse (before: AccountSnapshot, after: AccountSnapshot) -> AnalysisResult {
+    let diff = SnapshotDiff::diff(&before, &after);
+    let classification = classify(&diff);
+
+    AnalysisResult { before, after, diff, classification }
 }
