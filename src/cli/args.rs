@@ -18,4 +18,8 @@ pub struct Cli {
     /// Output format (Json or text)
     #[arg(long, default_value = "text")]
     pub output: String,
+
+    /// Base64 encoded transaction
+    #[arg(long)]
+    pub tx: Option<String>,
 }

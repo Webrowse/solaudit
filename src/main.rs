@@ -1,18 +1,16 @@
 use anyhow::Result;
 use clap::Parser;
 
-
 mod analysis;
 mod cli;
 mod models;
 mod report;
 mod rpc;
 
-
 use crate::analysis::engine::analyse;
 use crate::cli::args::Cli;
-use crate::rpc::client::SolanaRpc;
 use crate::report::writer::print_text;
+use crate::rpc::client::SolanaRpc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,18 +18,31 @@ async fn main() -> Result<()> {
 
     let rpc = SolanaRpc::new(&cli.cluster)?;
 
-    // Pre-state
+    // Pre-state: fetch current on-chain snapshot
     let before = rpc.fetch_snapshot(&cli.program).await?;
 
-    // Temp: fake change in state
-    let mut after = before.clone();
-    after.lamports += 1;
+    // Post-state: either from simulation or same as pre-state
+    let after = if let Some(tx_base64) = &cli.tx {
+        let sim = rpc.simulate_transaction(tx_base64, &cli.program).await?;
 
-    // Analyse
+        if let Some(err) = &sim.error {
+            eprintln!("Simulation error: {}", err);
+        }
+
+        if let Some(units) = sim.units_consumed {
+            eprintln!("Compute units consumed: {}", units);
+        }
+
+        // Use the simulated post-state if available, otherwise fall back to pre-state
+        sim.post_snapshot.unwrap_or_else(|| before.clone())
+    } else {
+        // No transaction provided — compare account to itself
+        before.clone()
+    };
+
     let result = analyse(before, after);
 
-    // Report
     print_text(&result);
-    
+
     Ok(())
 }
