@@ -1,6 +1,7 @@
 use crate::models::types::AccountSnapshot;
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct SnapshotDiff {
     pub lamports_changed: bool,
     pub owner_changed: bool,
@@ -19,7 +20,7 @@ impl SnapshotDiff {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum RetrySafety {
     Safe,
     Unsafe,
@@ -49,12 +50,13 @@ pub fn classify(diff: &SnapshotDiff) -> Classification {
     Classification { safety, reasons }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Classification {
     pub safety: RetrySafety,
     pub reasons: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
 pub struct AnalysisResult {
     pub before: AccountSnapshot,
     pub after: AccountSnapshot,

@@ -9,7 +9,7 @@ mod rpc;
 
 use crate::analysis::engine::analyse;
 use crate::cli::args::Cli;
-use crate::report::writer::print_text;
+use crate::report::writer::{print_text, print_json};
 use crate::rpc::client::SolanaRpc;
 
 #[tokio::main]
@@ -42,7 +42,11 @@ async fn main() -> Result<()> {
 
     let result = analyse(before, after);
 
-    print_text(&result);
+    // print_text(&result);
+    match cli.output.as_str() {
+        "json" => print_json(&result),
+        _ => print_text(&result),
+    }
 
     Ok(())
 }

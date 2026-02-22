@@ -57,3 +57,10 @@ pub fn print_text(result: &AnalysisResult) {
     }
     
 }
+
+pub fn print_json(result: &AnalysisResult) {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(result).unwrap()
+    );
+}
