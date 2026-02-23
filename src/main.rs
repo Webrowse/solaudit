@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use clap::Parser;
 
 mod analysis;
@@ -19,7 +19,9 @@ async fn main() -> Result<()> {
     let rpc = SolanaRpc::new(&cli.cluster)?;
 
     // Pre-state: fetch current on-chain snapshot
-    let before = rpc.fetch_snapshot(&cli.program).await?;
+    let before = rpc.fetch_snapshot(&cli.program)
+        .await
+        .map_err(|e| anyhow!("Failed to fetch pre-state: {}", e))?;
 
     // Post-state: either from simulation or same as pre-state
     let after = if let Some(tx_base64) = &cli.tx {
