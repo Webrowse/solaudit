@@ -62,11 +62,13 @@ pub struct AnalysisResult {
     pub after: AccountSnapshot,
     pub diff: SnapshotDiff,
     pub classification: Classification,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub simulation_logs: Vec<String>,
 }
 
-pub fn analyse (before: AccountSnapshot, after: AccountSnapshot) -> AnalysisResult {
+pub fn analyse(before: AccountSnapshot, after: AccountSnapshot, simulation_logs: Vec<String>) -> AnalysisResult {
     let diff = SnapshotDiff::diff(&before, &after);
     let classification = classify(&diff);
 
-    AnalysisResult { before, after, diff, classification }
+    AnalysisResult { before, after, diff, classification, simulation_logs }
 }

@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
         .map_err(|e| anyhow!("Failed to fetch pre-state: {}", e))?;
 
     // Post-state: either from simulation or same as pre-state
-    let after = if let Some(tx_base64) = &cli.tx {
+    let (after, simulation_logs) = if let Some(tx_base64) = &cli.tx {
         let sim = rpc.simulate_transaction(tx_base64, &cli.program).await?;
 
         if let Some(err) = &sim.error {
@@ -36,13 +36,14 @@ async fn main() -> Result<()> {
         }
 
         // Use the simulated post-state if available, otherwise fall back to pre-state
-        sim.post_snapshot.unwrap_or_else(|| before.clone())
+        let after = sim.post_snapshot.unwrap_or_else(|| before.clone());
+        (after, sim.logs)
     } else {
         // No transaction provided — compare account to itself
-        before.clone()
+        (before.clone(), Vec::new())
     };
 
-    let result = analyse(before, after);
+    let result = analyse(before, after, simulation_logs);
 
     // print_text(&result);
     match cli.output.as_str() {

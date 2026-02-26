@@ -50,12 +50,19 @@ pub fn print_text(result: &AnalysisResult) {
 
     }
 
-    
+
     println!("\nReasons: ");
     for r in &result.classification.reasons {
         println!("- {}", r);
     }
-    
+
+    if !result.simulation_logs.is_empty() {
+        println!("\nSimulation Logs:");
+        for log in &result.simulation_logs {
+            println!("  {}", log);
+        }
+    }
+
 }
 
 pub fn print_json(result: &AnalysisResult) {
