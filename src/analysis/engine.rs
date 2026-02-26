@@ -66,11 +66,21 @@ pub struct AnalysisResult {
     pub simulation_logs: Vec<String>,
 }
 
-pub fn analyse(before: AccountSnapshot, after: AccountSnapshot, simulation_logs: Vec<String>) -> AnalysisResult {
+pub fn analyse(
+    before: AccountSnapshot,
+    after: AccountSnapshot,
+    simulation_logs: Vec<String>,
+) -> AnalysisResult {
     let diff = SnapshotDiff::diff(&before, &after);
     let classification = classify(&diff);
 
-    AnalysisResult { before, after, diff, classification, simulation_logs }
+    AnalysisResult {
+        before,
+        after,
+        diff,
+        classification,
+        simulation_logs,
+    }
 }
 
 #[cfg(test)]

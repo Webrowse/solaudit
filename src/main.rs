@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use clap::Parser;
 
 mod analysis;
@@ -9,7 +9,7 @@ mod rpc;
 
 use crate::analysis::engine::analyse;
 use crate::cli::args::Cli;
-use crate::report::writer::{print_text, print_json};
+use crate::report::writer::{print_json, print_text};
 use crate::rpc::client::SolanaRpc;
 
 #[tokio::main]
@@ -19,7 +19,8 @@ async fn main() -> Result<()> {
     let rpc = SolanaRpc::new(&cli.cluster)?;
 
     // Pre-state: fetch current on-chain snapshot
-    let before = rpc.fetch_snapshot(&cli.program)
+    let before = rpc
+        .fetch_snapshot(&cli.program)
         .await
         .map_err(|e| anyhow!("Failed to fetch pre-state: {}", e))?;
 

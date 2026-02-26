@@ -11,7 +11,7 @@ pub fn print_text(result: &AnalysisResult) {
         println!("No state changes detected");
         return;
     }
-    
+
     println!("\nState Changes:");
 
     // Lamport changed
@@ -20,24 +20,18 @@ pub fn print_text(result: &AnalysisResult) {
             "- Lamports: {} -> {}",
             result.before.lamports, result.after.lamports
         );
-
     }
 
-    // Owner 
+    // Owner
     if result.before.owner != result.after.owner {
-        println!(
-            "Owner: {} -> {}",
-            result.before.owner, result.after.owner
-        );
-
+        println!("Owner: {} -> {}", result.before.owner, result.after.owner);
     }
 
     // Executable
-        if result.before.executable != result.after.executable {
+    if result.before.executable != result.after.executable {
         println!(
             "- Executable: {} -> {}",
-            result.before.executable,
-            result.after.executable
+            result.before.executable, result.after.executable
         );
     }
 
@@ -47,9 +41,7 @@ pub fn print_text(result: &AnalysisResult) {
             "Data Size: {} -> {}",
             result.before.data_len, result.after.data_len
         );
-
     }
-
 
     println!("\nReasons: ");
     for r in &result.classification.reasons {
@@ -62,7 +54,6 @@ pub fn print_text(result: &AnalysisResult) {
             println!("  {}", log);
         }
     }
-
 }
 
 pub fn print_json(result: &AnalysisResult) {

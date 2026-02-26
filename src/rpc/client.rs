@@ -1,7 +1,7 @@
 use crate::models::types::AccountSnapshot;
-use anyhow::{Result, anyhow};
-use base64::Engine;
+use anyhow::{anyhow, Result};
 use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_request::RpcRequest;
 use solana_sdk::pubkey::Pubkey;
@@ -57,7 +57,8 @@ impl SolanaRpc {
         watch_address: &str,
     ) -> Result<SimulationResult> {
         // Validate the base64 input decodes to bytes
-        STANDARD.decode(tx_base64)
+        STANDARD
+            .decode(tx_base64)
             .map_err(|e| anyhow!("Invalid base64 transaction: {}", e))?;
 
         // Build the RPC request with accounts config to get post-state back.
@@ -75,17 +76,23 @@ impl SolanaRpc {
             }
         ]);
 
-        let response: serde_json::Value = self.client.send(
-            RpcRequest::SimulateTransaction,
-            params,
-        ).await?;
+        let response: serde_json::Value = self
+            .client
+            .send(RpcRequest::SimulateTransaction, params)
+            .await?;
 
         // Parse error field
-        let error = response.get("err")
-            .and_then(|v| if v.is_null() { None } else { Some(format!("{}", v)) });
+        let error = response.get("err").and_then(|v| {
+            if v.is_null() {
+                None
+            } else {
+                Some(format!("{}", v))
+            }
+        });
 
         // Parse logs
-        let logs = response.get("logs")
+        let logs = response
+            .get("logs")
             .and_then(|v| v.as_array())
             .map(|arr| {
                 arr.iter()
@@ -95,8 +102,7 @@ impl SolanaRpc {
             .unwrap_or_default();
 
         // Parse compute units consumed
-        let units_consumed = response.get("unitsConsumed")
-            .and_then(|v| v.as_u64());
+        let units_consumed = response.get("unitsConsumed").and_then(|v| v.as_u64());
 
         // Parse the simulated account state for our watched address
         let post_snapshot = self.parse_simulated_account(&response, watch_address)?;
@@ -122,27 +128,35 @@ impl SolanaRpc {
         };
 
         // We requested one address, so we expect one entry
-        let account_value = match accounts.first().and_then(|v| if v.is_null() { None } else { Some(v) }) {
-            Some(v) => v,
-            None => return Ok(None),
-        };
+        let account_value =
+            match accounts
+                .first()
+                .and_then(|v| if v.is_null() { None } else { Some(v) })
+            {
+                Some(v) => v,
+                None => return Ok(None),
+            };
 
         let pubkey: Pubkey = address.parse()?;
 
-        let lamports = account_value.get("lamports")
+        let lamports = account_value
+            .get("lamports")
             .and_then(|v| v.as_u64())
             .ok_or_else(|| anyhow!("Missing lamports in simulated account"))?;
 
-        let owner: Pubkey = account_value.get("owner")
+        let owner: Pubkey = account_value
+            .get("owner")
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("Missing owner in simulated account"))?
             .parse()?;
 
-        let executable = account_value.get("executable")
+        let executable = account_value
+            .get("executable")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let rent_epoch = account_value.get("rentEpoch")
+        let rent_epoch = account_value
+            .get("rentEpoch")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
@@ -150,13 +164,12 @@ impl SolanaRpc {
         let data_len = match account_value.get("data").and_then(|v| v.as_array()) {
             Some(arr) => {
                 // Format: ["<base64 data>", "base64"]
-                let encoded = arr.first()
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let encoded = arr.first().and_then(|v| v.as_str()).unwrap_or("");
                 if encoded.is_empty() {
                     0
                 } else {
-                    STANDARD.decode(encoded)
+                    STANDARD
+                        .decode(encoded)
                         .map(|bytes| bytes.len())
                         .unwrap_or(0)
                 }
