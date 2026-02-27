@@ -1,153 +1,142 @@
 # solaudit
 
-A Solana transaction retry-safety analyzer developed as a capstone project.
+[![Crates.io](https://img.shields.io/crates/v/solaudit.svg)](https://crates.io/crates/solaudit)
+[![Docs.rs](https://docs.rs/solaudit/badge.svg)](https://docs.rs/solaudit)
+[![License:
+MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/Webrowse/solaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/Webrowse/solaudit/actions)
 
-This tool simulates transactions, captures on-chain account state before and after execution, computes state diffs, and classifies whether retrying a transaction is safe or unsafe.
+A CLI tool for analyzing retry-safety of Solana transactions via
+deterministic state diffing.
 
-Once a Solana transaction mutates persistent state, retrying it may lead to duplicated or irreversible effects. This tool makes those state changes explicit before submission.
+`solaudit` simulates transactions, captures on-chain account state
+before and after execution, computes state diffs, and classifies whether
+retrying a transaction is safe or unsafe.
 
----
+Once a Solana transaction mutates persistent state, retrying it may lead
+to duplicated or irreversible effects. This tool makes those state
+changes explicit before submission.
 
-## Motivation
+------------------------------------------------------------------------
 
-On Solana, failed or ambiguous transactions often leave developers unsure whether an instruction partially executed.
+## Quick Install
 
-Today, developers rely on logs and manual inspection to determine retry safety. This is slow, error-prone, and unreliable for complex workflows.
+Install via Cargo:
 
-`solaudit` provides:
-
-- Explicit before/after state snapshots  
-- Deterministic state diffing  
-- Automated retry-safety classification  
-
----
-
-## Core Features
-
-- Persistent account snapshot capture  
-- Before/after state diffing (lamports, owner, executable flag, data size)  
-- Retry-safety classification with explanations  
-- RPC `simulateTransaction` integration  
-- Human-readable and JSON output formats  
-- Anchor-compatible workflow  
-
----
-
-## Architecture Overview
-
-Execution pipeline:
-
-```
-CLI Input
-   ↓
-RPC Snapshot (Pre-state)
-   ↓
-Transaction Simulation
-   ↓
-RPC Snapshot (Post-state)
-   ↓
-State Diff Engine
-   ↓
-Retry-Safety Classification
-   ↓
-Report Generation
+``` bash
+cargo install solaudit
 ```
 
-Each layer is modularized in the codebase.
+Or build from source:
 
----
-
-## Installation
-
-Build from source:
-
-```bash
+``` bash
+git clone https://github.com/Webrowse/solaudit
+cd solaudit
 cargo build --release
 ```
 
-Binary output:
+------------------------------------------------------------------------
 
-```
-target/release/solaudit
-```
+## Motivation
 
----
+On Solana, failed or ambiguous transactions often leave developers
+unsure whether an instruction partially executed.
+
+Today, developers rely on logs and manual inspection to determine retry
+safety. This is slow, error-prone, and unreliable for complex workflows.
+
+`solaudit` provides:
+
+-   Explicit before/after state snapshots\
+-   Deterministic state diffing\
+-   Automated retry-safety classification\
+-   Structured JSON output for CI
+
+------------------------------------------------------------------------
+
+## Core Features
+
+-   Persistent account snapshot capture\
+-   Deterministic diff engine (lamports, owner, executable flag, data
+    size)\
+-   Retry-safety classification with explanations\
+-   RPC `simulateTransaction` integration\
+-   Human-readable and JSON output formats\
+-   Anchor-compatible workflow\
+-   15 unit tests covering classification and diff logic
+
+------------------------------------------------------------------------
 
 ## Usage
 
-### 1. Snapshot Only (No Transaction)
+### Snapshot Only (No Transaction)
 
-Fetch and report the current state of an account:
-
-```bash
+``` bash
 solaudit --program <ACCOUNT_PUBKEY> --cluster devnet
 ```
 
----
+### With Transaction Simulation
 
-### 2. With Transaction Simulation
-
-Simulate a base64-encoded transaction and analyze state changes:
-
-```bash
+``` bash
 solaudit   --program <ACCOUNT_PUBKEY>   --tx <BASE64_TX>   --cluster devnet
 ```
 
----
+### JSON Output (CI / Automation)
 
-### 3. JSON Output (CI / Automation)
-
-Enable machine-readable output:
-
-```bash
-solaudit   --program <ACCOUNT_PUBKEY>   --cluster devnet   --output json
+``` bash
+solaudit   --program <ACCOUNT_PUBKEY>   --tx <BASE64_TX>   --output json
 ```
 
----
+Exit codes can be used for CI enforcement workflows.
 
-### CLI Flags
+------------------------------------------------------------------------
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--program` | Account pubkey to monitor | required |
-| `--cluster` | RPC cluster (`devnet`, `mainnet`) | `devnet` |
-| `--tx` | Base64 transaction to simulate | none |
-| `--output` | Output format (`text`, `json`) | `text` |
+## CLI Flags
 
-Note: `--program` specifies the account being monitored, not the program ID.
+  Flag          Description                         Default
+  ------------- ----------------------------------- ----------
+  `--program`   Account pubkey to monitor           required
+  `--cluster`   RPC cluster (`devnet`, `mainnet`)   `devnet`
+  `--tx`        Base64 transaction to simulate      none
+  `--output`    Output format (`text`, `json`)      `text`
 
----
+Note: `--program` specifies the account being monitored, not the program
+ID.
 
-## Demo & Smoke Test
+------------------------------------------------------------------------
 
-Run:
+## Architecture Overview
 
-```bash
-bash scripts/test.sh
-```
+    CLI Input
+       ↓
+    RPC Snapshot (Pre-state)
+       ↓
+    Transaction Simulation
+       ↓
+    RPC Snapshot (Post-state)
+       ↓
+    State Diff Engine
+       ↓
+    Retry-Safety Classification
+       ↓
+    Report Generation
 
-This performs:
+Each layer is modularized and tested independently.
 
-- Project build  
-- Live RPC connectivity check  
-- Snapshot + classification on devnet  
-
-For full demo, use a transaction generated from an Anchor project.
-
----
+------------------------------------------------------------------------
 
 ## Integration with Anchor
 
 Typical workflow:
 
-1. Generate transaction in Anchor client  
-2. Serialize to base64  
-3. Analyze with `solaudit`  
-4. Decide whether to submit  
+1.  Generate transaction in Anchor client\
+2.  Serialize to base64\
+3.  Analyze with `solaudit`\
+4.  Decide whether to submit
 
-JavaScript example:
+Example:
 
-```js
+``` js
 const tx = await program.methods.deposit(...).transaction();
 
 const serialized = tx.serialize({
@@ -160,48 +149,44 @@ const base64 = Buffer.from(serialized).toString("base64");
 
 Then:
 
-```bash
+``` bash
 solaudit --program <PDA> --tx "<base64>"
 ```
 
----
+------------------------------------------------------------------------
 
 ## Project Structure
 
-```
-src/
-  main.rs              CLI orchestration
-  cli/args.rs          CLI parsing
-  models/types.rs      AccountSnapshot model
-  analysis/engine.rs   Diff + classification engine
-  report/writer.rs     Text / JSON reporting
-  rpc/client.rs        Solana RPC integration
-  scripts/test.sh      Smoke test
-```
+    src/
+      main.rs              CLI orchestration
+      cli/args.rs          CLI parsing
+      models/types.rs      AccountSnapshot model
+      analysis/engine.rs   Diff + classification engine
+      report/writer.rs     Text / JSON reporting
+      rpc/client.rs        Solana RPC integration
+      scripts/test.sh      Smoke test
 
----
+------------------------------------------------------------------------
 
 ## Limitations
 
-- Uses public RPC simulation (not full validator execution)  
-- Tracks one account per run  
-- No CPI-level tracing  
-- Simulation behavior may differ from on-chain execution  
+-   Uses public RPC simulation (not full validator execution)\
+-   Tracks one account per run\
+-   No CPI-level tracing\
+-   Simulation behavior may differ from on-chain execution
 
-These limitations are documented and considered acceptable for a proof-of-concept.
-
----
+------------------------------------------------------------------------
 
 ## Future Work
 
-- Multi-account diffing  
-- Local execution backend (Surfpool / LiteSVM)  
-- CPI call tracing  
-- Workflow-level transaction analysis  
-- Enhanced automation support  
+-   Multi-account diffing\
+-   Local execution backend (Surfpool / LiteSVM)\
+-   CPI call tracing\
+-   Workflow-level transaction analysis\
+-   Enhanced automation support
 
----
+------------------------------------------------------------------------
 
-## Author
+## License
 
-Developed as part of a capstone project focused on Solana transaction safety and workflow analysis.
+MIT
