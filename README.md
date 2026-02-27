@@ -1,7 +1,6 @@
 # solaudit
 
 [![Crates.io](https://img.shields.io/crates/v/solaudit.svg)](https://crates.io/crates/solaudit)
-[![Docs.rs](https://docs.rs/solaudit/badge.svg)](https://docs.rs/solaudit)
 [![License:
 MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/Webrowse/solaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/Webrowse/solaudit/actions)
@@ -47,22 +46,22 @@ safety. This is slow, error-prone, and unreliable for complex workflows.
 
 `solaudit` provides:
 
--   Explicit before/after state snapshots\
--   Deterministic state diffing\
--   Automated retry-safety classification\
+-   Explicit before/after state snapshots
+-   Deterministic state diffing
+-   Automated retry-safety classification
 -   Structured JSON output for CI
 
 ------------------------------------------------------------------------
 
 ## Core Features
 
--   Persistent account snapshot capture\
+-   Persistent account snapshot capture
 -   Deterministic diff engine (lamports, owner, executable flag, data
-    size)\
--   Retry-safety classification with explanations\
--   RPC `simulateTransaction` integration\
--   Human-readable and JSON output formats\
--   Anchor-compatible workflow\
+    size)
+-   Retry-safety classification with explanations
+-   RPC `simulateTransaction` integration
+-   Human-readable and JSON output formats
+-   Anchor-compatible workflow
 -   15 unit tests covering classification and diff logic
 
 ------------------------------------------------------------------------
@@ -129,9 +128,9 @@ Each layer is modularized and tested independently.
 
 Typical workflow:
 
-1.  Generate transaction in Anchor client\
-2.  Serialize to base64\
-3.  Analyze with `solaudit`\
+1.  Generate transaction in Anchor client
+2.  Serialize to base64
+3.  Analyze with `solaudit`
 4.  Decide whether to submit
 
 Example:
@@ -170,19 +169,19 @@ solaudit --program <PDA> --tx "<base64>"
 
 ## Limitations
 
--   Uses public RPC simulation (not full validator execution)\
--   Tracks one account per run\
--   No CPI-level tracing\
+-   Uses public RPC simulation (not full validator execution)
+-   Tracks one account per run
+-   No CPI-level tracing
 -   Simulation behavior may differ from on-chain execution
 
 ------------------------------------------------------------------------
 
 ## Future Work
 
--   Multi-account diffing\
--   Local execution backend (Surfpool / LiteSVM)\
--   CPI call tracing\
--   Workflow-level transaction analysis\
+-   Multi-account diffing
+-   Local execution backend (Surfpool / LiteSVM)
+-   CPI call tracing
+-   Workflow-level transaction analysis
 -   Enhanced automation support
 
 ------------------------------------------------------------------------
