@@ -99,7 +99,7 @@ mod tests {
         }
     }
 
-    // ── SnapshotDiff::diff ────────────────────────────────────────────────
+    // — SnapshotDiff::diff —
 
     #[test]
     fn diff_no_changes() {
@@ -169,7 +169,7 @@ mod tests {
         assert!(d.data_len_changed);
     }
 
-    // ── classify ─────────────────────────────────────────────────────────
+    // — classify —
 
     #[test]
     fn classify_no_changes_is_safe() {

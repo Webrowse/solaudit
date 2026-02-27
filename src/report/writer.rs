@@ -1,7 +1,7 @@
 use crate::analysis::engine::AnalysisResult;
 
 pub fn print_text(result: &AnalysisResult) {
-    println!("–––––––Retry Safety Report–––––––");
+    println!("——— Retry Safety Report ———");
 
     println!("Account: {}", result.before.pubkey);
 
