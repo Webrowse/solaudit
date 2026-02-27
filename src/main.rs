@@ -36,17 +36,14 @@ async fn main() -> Result<()> {
             eprintln!("Compute units consumed: {}", units);
         }
 
-        // Use the simulated post-state if available, otherwise fall back to pre-state
         let after = sim.post_snapshot.unwrap_or_else(|| before.clone());
         (after, sim.logs)
     } else {
-        // No transaction provided — compare account to itself
         (before.clone(), Vec::new())
     };
 
     let result = analyse(before, after, simulation_logs);
 
-    // print_text(&result);
     match cli.output.as_str() {
         "json" => print_json(&result),
         _ => print_text(&result),

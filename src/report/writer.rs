@@ -14,7 +14,6 @@ pub fn print_text(result: &AnalysisResult) {
 
     println!("\nState Changes:");
 
-    // Lamport changed
     if result.before.lamports != result.after.lamports {
         println!(
             "- Lamports: {} -> {}",
@@ -22,12 +21,10 @@ pub fn print_text(result: &AnalysisResult) {
         );
     }
 
-    // Owner
     if result.before.owner != result.after.owner {
-        println!("Owner: {} -> {}", result.before.owner, result.after.owner);
+        println!("- Owner: {} -> {}", result.before.owner, result.after.owner);
     }
 
-    // Executable
     if result.before.executable != result.after.executable {
         println!(
             "- Executable: {} -> {}",
@@ -35,10 +32,9 @@ pub fn print_text(result: &AnalysisResult) {
         );
     }
 
-    // Data Size
     if result.before.data_len != result.after.data_len {
         println!(
-            "Data Size: {} -> {}",
+            "- Data Size: {} -> {}",
             result.before.data_len, result.after.data_len
         );
     }

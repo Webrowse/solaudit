@@ -46,23 +46,17 @@ impl SolanaRpc {
         })
     }
 
-    /// Simulate a base64-encoded transaction and return the simulated post-state
-    /// for the watched account.
-    ///
-    /// Uses the RPC `simulateTransaction` with `accounts` config so we get the
-    /// simulated account state back in the response — no on-chain state is mutated.
+    /// Simulate a base64-encoded transaction and return the post-state for the watched account.
+    /// Uses `simulateTransaction` with accounts config. No on-chain state is mutated.
     pub async fn simulate_transaction(
         &self,
         tx_base64: &str,
         watch_address: &str,
     ) -> Result<SimulationResult> {
-        // Validate the base64 input decodes to bytes
         STANDARD
             .decode(tx_base64)
             .map_err(|e| anyhow!("Invalid base64 transaction: {}", e))?;
 
-        // Build the RPC request with accounts config to get post-state back.
-        // We pass the base64 string directly — the RPC server deserializes it.
         let params = serde_json::json!([
             tx_base64,
             {
@@ -81,7 +75,6 @@ impl SolanaRpc {
             .send(RpcRequest::SimulateTransaction, params)
             .await?;
 
-        // Parse error field
         let error = response.get("err").and_then(|v| {
             if v.is_null() {
                 None
@@ -90,7 +83,6 @@ impl SolanaRpc {
             }
         });
 
-        // Parse logs
         let logs = response
             .get("logs")
             .and_then(|v| v.as_array())
@@ -101,10 +93,8 @@ impl SolanaRpc {
             })
             .unwrap_or_default();
 
-        // Parse compute units consumed
         let units_consumed = response.get("unitsConsumed").and_then(|v| v.as_u64());
 
-        // Parse the simulated account state for our watched address
         let post_snapshot = self.parse_simulated_account(&response, watch_address)?;
 
         Ok(SimulationResult {
@@ -115,8 +105,7 @@ impl SolanaRpc {
         })
     }
 
-    /// Extract the simulated account from the RPC response and convert it
-    /// into an AccountSnapshot.
+    /// Extract the simulated account from the RPC response into an AccountSnapshot.
     fn parse_simulated_account(
         &self,
         response: &serde_json::Value,
@@ -160,7 +149,6 @@ impl SolanaRpc {
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
-        // Decode account data to get its length
         let data_len = match account_value.get("data").and_then(|v| v.as_array()) {
             Some(arr) => {
                 // Format: ["<base64 data>", "base64"]
