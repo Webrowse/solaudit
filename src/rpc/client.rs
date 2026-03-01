@@ -20,10 +20,22 @@ pub struct SolanaRpc {
 
 impl SolanaRpc {
     pub fn new(cluster: &str) -> Result<Self> {
-        let url = match cluster {
-            "devnet" => "https://api.devnet.solana.com".to_string(),
-            "mainnet" => "https://api.mainnet-beta.solana.com".to_string(),
-            _ => return Err(anyhow!("Invalid cluster: {}", cluster)),
+        // SOLANA_RPC_URL env var overrides the cluster argument.
+        let url = if let Ok(custom) = std::env::var("SOLANA_RPC_URL") {
+            custom
+        } else {
+            match cluster {
+                "devnet" => "https://api.devnet.solana.com".to_string(),
+                "mainnet" => "https://api.mainnet-beta.solana.com".to_string(),
+                "localnet" | "localhost" => "http://127.0.0.1:8899".to_string(),
+                _ => {
+                    return Err(anyhow!(
+                        "Invalid cluster: '{}'. Use devnet, mainnet, or localnet, \
+                         or set SOLANA_RPC_URL for a custom endpoint.",
+                        cluster
+                    ))
+                }
+            }
         };
 
         let client = RpcClient::new(url);
@@ -31,17 +43,41 @@ impl SolanaRpc {
         Ok(Self { client })
     }
 
+    /// Like `fetch_snapshot`, but returns a zeroed-out snapshot when the account
+    /// does not yet exist on-chain (data_len = 0, lamports = 0, owner = default).
+    /// Any other RPC error is propagated as-is.
+    pub async fn fetch_snapshot_or_default(&self, address: &str) -> Result<AccountSnapshot> {
+        match self.fetch_snapshot(address).await {
+            Ok(snapshot) => Ok(snapshot),
+            Err(e) if e.to_string().contains("AccountNotFound") => {
+                let pubkey: Pubkey = address.parse()?;
+                Ok(AccountSnapshot {
+                    pubkey,
+                    lamports: 0,
+                    owner: Pubkey::default(),
+                    executable: false,
+                    data_len: 0,
+                    data: vec![],
+                    rent_epoch: 0,
+                })
+            }
+            Err(e) => Err(e),
+        }
+    }
+
     pub async fn fetch_snapshot(&self, address: &str) -> Result<AccountSnapshot> {
         let pubkey: Pubkey = address.parse()?;
 
         let account = self.client.get_account(&pubkey).await?;
+        let data_len = account.data.len();
 
         Ok(AccountSnapshot {
             pubkey,
             lamports: account.lamports,
             owner: account.owner,
             executable: account.executable,
-            data_len: account.data.len(),
+            data_len,
+            data: account.data,
             rent_epoch: account.rent_epoch,
         })
     }
@@ -61,6 +97,7 @@ impl SolanaRpc {
             tx_base64,
             {
                 "encoding": "base64",
+                "commitment": "confirmed",
                 "sigVerify": false,
                 "replaceRecentBlockhash": true,
                 "accounts": {
@@ -75,7 +112,12 @@ impl SolanaRpc {
             .send(RpcRequest::SimulateTransaction, params)
             .await?;
 
-        let error = response.get("err").and_then(|v| {
+        // simulateTransaction returns { context: {...}, value: { err, logs, accounts, ... } }
+        let sim = response
+            .get("value")
+            .ok_or_else(|| anyhow!("simulateTransaction response missing 'value' field"))?;
+
+        let error = sim.get("err").and_then(|v| {
             if v.is_null() {
                 None
             } else {
@@ -83,7 +125,7 @@ impl SolanaRpc {
             }
         });
 
-        let logs = response
+        let logs = sim
             .get("logs")
             .and_then(|v| v.as_array())
             .map(|arr| {
@@ -93,9 +135,9 @@ impl SolanaRpc {
             })
             .unwrap_or_default();
 
-        let units_consumed = response.get("unitsConsumed").and_then(|v| v.as_u64());
+        let units_consumed = sim.get("unitsConsumed").and_then(|v| v.as_u64());
 
-        let post_snapshot = self.parse_simulated_account(&response, watch_address)?;
+        let post_snapshot = self.parse_simulated_account(sim, watch_address)?;
 
         Ok(SimulationResult {
             error,
@@ -105,7 +147,6 @@ impl SolanaRpc {
         })
     }
 
-    /// Extract the simulated account from the RPC response into an AccountSnapshot.
     fn parse_simulated_account(
         &self,
         response: &serde_json::Value,
@@ -149,21 +190,19 @@ impl SolanaRpc {
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
-        let data_len = match account_value.get("data").and_then(|v| v.as_array()) {
+        let data = match account_value.get("data").and_then(|v| v.as_array()) {
             Some(arr) => {
                 // Format: ["<base64 data>", "base64"]
                 let encoded = arr.first().and_then(|v| v.as_str()).unwrap_or("");
                 if encoded.is_empty() {
-                    0
+                    vec![]
                 } else {
-                    STANDARD
-                        .decode(encoded)
-                        .map(|bytes| bytes.len())
-                        .unwrap_or(0)
+                    STANDARD.decode(encoded).unwrap_or_default()
                 }
             }
-            None => 0,
+            None => vec![],
         };
+        let data_len = data.len();
 
         Ok(Some(AccountSnapshot {
             pubkey,
@@ -171,6 +210,7 @@ impl SolanaRpc {
             owner,
             executable,
             data_len,
+            data,
             rent_epoch,
         }))
     }

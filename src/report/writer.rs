@@ -39,6 +39,10 @@ pub fn print_text(result: &AnalysisResult) {
         );
     }
 
+    if result.diff.data_changed {
+        println!("- Data Content: changed");
+    }
+
     println!("\nReasons: ");
     for r in &result.classification.reasons {
         println!("- {}", r);

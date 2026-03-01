@@ -7,6 +7,7 @@ pub struct SnapshotDiff {
     pub owner_changed: bool,
     pub executable_changed: bool,
     pub data_len_changed: bool,
+    pub data_changed: bool,
 }
 
 impl SnapshotDiff {
@@ -16,6 +17,7 @@ impl SnapshotDiff {
             owner_changed: before.owner != after.owner,
             executable_changed: before.executable != after.executable,
             data_len_changed: before.data_len != after.data_len,
+            data_changed: before.data != after.data,
         }
     }
 }
@@ -39,6 +41,9 @@ pub fn classify(diff: &SnapshotDiff) -> Classification {
     }
     if diff.data_len_changed {
         reasons.push("Account data size changed".into());
+    }
+    if diff.data_changed {
+        reasons.push("Account data content changed".into());
     }
 
     let safety = if reasons.is_empty() {
@@ -95,6 +100,7 @@ mod tests {
             owner: Pubkey::default(),
             executable: false,
             data_len: 128,
+            data: vec![0u8; 128],
             rent_epoch: 0,
         }
     }
@@ -109,6 +115,7 @@ mod tests {
         assert!(!d.owner_changed);
         assert!(!d.executable_changed);
         assert!(!d.data_len_changed);
+        assert!(!d.data_changed);
     }
 
     #[test]
@@ -121,6 +128,7 @@ mod tests {
         assert!(!d.owner_changed);
         assert!(!d.executable_changed);
         assert!(!d.data_len_changed);
+        assert!(!d.data_changed);
     }
 
     #[test]
@@ -149,6 +157,28 @@ mod tests {
         after.data_len = 256;
         let d = SnapshotDiff::diff(&before, &after);
         assert!(d.data_len_changed);
+        assert!(!d.data_changed);
+    }
+
+    #[test]
+    fn diff_data_changed_same_len() {
+        let before = base_snapshot();
+        let mut after = base_snapshot();
+        after.data[0] = 0xff;
+        let d = SnapshotDiff::diff(&before, &after);
+        assert!(!d.data_len_changed);
+        assert!(d.data_changed);
+    }
+
+    #[test]
+    fn diff_data_changed_different_len() {
+        let before = base_snapshot();
+        let mut after = base_snapshot();
+        after.data = vec![1u8, 2u8];
+        after.data_len = 2;
+        let d = SnapshotDiff::diff(&before, &after);
+        assert!(d.data_len_changed);
+        assert!(d.data_changed);
     }
 
     #[test]
@@ -160,6 +190,7 @@ mod tests {
             owner: Pubkey::new_unique(),
             executable: true,
             data_len: 0,
+            data: vec![],
             rent_epoch: 99,
         };
         let d = SnapshotDiff::diff(&before, &after);
@@ -167,6 +198,7 @@ mod tests {
         assert!(d.owner_changed);
         assert!(d.executable_changed);
         assert!(d.data_len_changed);
+        assert!(d.data_changed);
     }
 
     // — classify —
@@ -178,6 +210,7 @@ mod tests {
             owner_changed: false,
             executable_changed: false,
             data_len_changed: false,
+            data_changed: false,
         };
         let c = classify(&diff);
         assert!(matches!(c.safety, RetrySafety::Safe));
@@ -191,6 +224,7 @@ mod tests {
             owner_changed: false,
             executable_changed: false,
             data_len_changed: false,
+            data_changed: false,
         };
         let c = classify(&diff);
         assert!(matches!(c.safety, RetrySafety::Unsafe));
@@ -204,6 +238,7 @@ mod tests {
             owner_changed: true,
             executable_changed: false,
             data_len_changed: false,
+            data_changed: false,
         };
         let c = classify(&diff);
         assert!(matches!(c.safety, RetrySafety::Unsafe));
@@ -217,6 +252,7 @@ mod tests {
             owner_changed: false,
             executable_changed: true,
             data_len_changed: false,
+            data_changed: false,
         };
         let c = classify(&diff);
         assert!(matches!(c.safety, RetrySafety::Unsafe));
@@ -230,10 +266,38 @@ mod tests {
             owner_changed: false,
             executable_changed: false,
             data_len_changed: true,
+            data_changed: false,
         };
         let c = classify(&diff);
         assert!(matches!(c.safety, RetrySafety::Unsafe));
         assert_eq!(c.reasons, vec!["Account data size changed"]);
+    }
+
+    #[test]
+    fn classify_data_changed_is_unsafe() {
+        let diff = SnapshotDiff {
+            lamports_changed: false,
+            owner_changed: false,
+            executable_changed: false,
+            data_len_changed: false,
+            data_changed: true,
+        };
+        let c = classify(&diff);
+        assert!(matches!(c.safety, RetrySafety::Unsafe));
+        assert_eq!(c.reasons, vec!["Account data content changed"]);
+    }
+
+    #[test]
+    fn classify_data_changed_reason_text() {
+        let before = base_snapshot();
+        let mut after = base_snapshot();
+        after.data[0] = 0xAB;
+        let diff = SnapshotDiff::diff(&before, &after);
+        let c = classify(&diff);
+        assert!(matches!(c.safety, RetrySafety::Unsafe));
+        assert!(c
+            .reasons
+            .contains(&"Account data content changed".to_string()));
     }
 
     #[test]
@@ -243,13 +307,17 @@ mod tests {
             owner_changed: true,
             executable_changed: true,
             data_len_changed: true,
+            data_changed: true,
         };
         let c = classify(&diff);
         assert!(matches!(c.safety, RetrySafety::Unsafe));
-        assert_eq!(c.reasons.len(), 4);
+        assert_eq!(c.reasons.len(), 5);
         assert!(c.reasons.contains(&"Lamports changed".to_string()));
         assert!(c.reasons.contains(&"Owner changed".to_string()));
         assert!(c.reasons.contains(&"Executable flag changed".to_string()));
         assert!(c.reasons.contains(&"Account data size changed".to_string()));
+        assert!(c
+            .reasons
+            .contains(&"Account data content changed".to_string()));
     }
 }

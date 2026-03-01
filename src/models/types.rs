@@ -8,5 +8,6 @@ pub struct AccountSnapshot {
     pub owner: Pubkey,
     pub executable: bool,
     pub data_len: usize,
+    pub data: Vec<u8>,
     pub rent_epoch: u64,
 }

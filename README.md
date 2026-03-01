@@ -62,7 +62,7 @@ safety. This is slow, error-prone, and unreliable for complex workflows.
 -   RPC `simulateTransaction` integration
 -   Human-readable and JSON output formats
 -   Anchor-compatible workflow
--   15 unit tests covering classification and diff logic
+-   16 unit tests covering classification and diff logic
 
 ------------------------------------------------------------------------
 

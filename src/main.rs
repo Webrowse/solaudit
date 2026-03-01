@@ -1,16 +1,10 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 
-mod analysis;
-mod cli;
-mod models;
-mod report;
-mod rpc;
-
-use crate::analysis::engine::analyse;
-use crate::cli::args::Cli;
-use crate::report::writer::{print_json, print_text};
-use crate::rpc::client::SolanaRpc;
+use solaudit::analysis::engine::analyse;
+use solaudit::cli::args::Cli;
+use solaudit::report::writer::{print_json, print_text};
+use solaudit::rpc::client::SolanaRpc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,13 +12,11 @@ async fn main() -> Result<()> {
 
     let rpc = SolanaRpc::new(&cli.cluster)?;
 
-    // Pre-state: fetch current on-chain snapshot
     let before = rpc
         .fetch_snapshot(&cli.program)
         .await
         .map_err(|e| anyhow!("Failed to fetch pre-state: {}", e))?;
 
-    // Post-state: either from simulation or same as pre-state
     let (after, simulation_logs) = if let Some(tx_base64) = &cli.tx {
         let sim = rpc.simulate_transaction(tx_base64, &cli.program).await?;
 
