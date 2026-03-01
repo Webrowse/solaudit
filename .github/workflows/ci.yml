@@ -31,3 +31,6 @@ jobs:
 
       - name: Test
         run: cargo test
+        env:
+          SOLAUDIT_DEVNET_TEST: ${{ secrets.SOLAUDIT_DEVNET_TEST }}
+          COUNTER_PROGRAM_ID: ${{ secrets.COUNTER_PROGRAM_ID }}
