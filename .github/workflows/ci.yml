@@ -29,6 +29,11 @@ jobs:
       - name: Clippy
         run: cargo clippy -- -D warnings
 
+      - name: Setup devnet keypair
+        run: |
+          mkdir -p ~/.config/solana
+          echo "${{ secrets.SOLANA_DEVNET_KEYPAIR }}" | base64 -d > ~/.config/solana/id.json
+
       - name: Test
         run: cargo test
         env:

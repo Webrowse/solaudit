@@ -224,26 +224,29 @@ async fn test_devnet_counter_increment_diff() {
 
     let result2 = analyse(before_tx2, after_tx2, sim2.logs);
 
-println!("TX2 Diff:           {:?}", result2.diff);
-println!(
-    "TX2 Classification: {:?}",
-    result2.classification.safety
-);
-println!("TX2 Reasons:        {:?}", result2.classification.reasons);
+    println!("TX2 Diff:           {:?}", result2.diff);
+    println!("TX2 Classification: {:?}", result2.classification.safety);
+    println!("TX2 Reasons:        {:?}", result2.classification.reasons);
 
-assert!(!result2.diff.lamports_changed, "lamports_changed should be false");
-assert!(!result2.diff.owner_changed, "owner_changed should be false");
-assert!(!result2.diff.executable_changed, "executable_changed should be false");
-assert!(!result2.diff.data_len_changed, "data_len_changed should be false");
-assert!(result2.diff.data_changed, "data_changed should be true");
+    assert!(
+        !result2.diff.lamports_changed,
+        "lamports_changed should be false"
+    );
+    assert!(!result2.diff.owner_changed, "owner_changed should be false");
+    assert!(
+        !result2.diff.executable_changed,
+        "executable_changed should be false"
+    );
+    assert!(
+        !result2.diff.data_len_changed,
+        "data_len_changed should be false"
+    );
+    assert!(result2.diff.data_changed, "data_changed should be true");
 
-assert!(matches!(
-    result2.classification.safety,
-    RetrySafety::Unsafe
-));
+    assert!(matches!(result2.classification.safety, RetrySafety::Unsafe));
 
-assert!(result2
-    .classification
-    .reasons
-    .contains(&"Account data content changed".to_string()));
+    assert!(result2
+        .classification
+        .reasons
+        .contains(&"Account data content changed".to_string()));
 }
